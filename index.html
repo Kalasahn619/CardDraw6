@@ -776,12 +776,6 @@
                 cardElement.style.animationDelay = `${index * 0.1}s`;
                 cardElement.dataset.cardId = `${card.suit}-${card.value}`;
                 
-            currentDraw.forEach((card, index) => {
-                const cardElement = document.createElement('div');
-                cardElement.className = 'card card-appear card-stack-effect';
-                cardElement.style.animationDelay = `${index * 0.1}s`;
-                cardElement.dataset.cardId = `${card.suit}-${card.value}`;
-                
                 const codex = calculateCodex(card);
                 const originalCodex = calculateCodex(card, ['♥', '♦', '♠', '♣']);
                 const delta = codex - originalCodex;
