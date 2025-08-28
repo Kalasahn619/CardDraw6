@@ -748,10 +748,31 @@
             container.innerHTML = '';
             
             currentDraw.forEach((card, index) => {
-                const cardElement = document.createElement('div');
-                cardElement.className = 'card card-appear card-stack-effect';
-                cardElement.style.animationDelay = `${index * 0.1}s`;
-                cardElement.dataset.cardId = `${card.suit}-${card.value}`;
+          const cardElement = document.createElement('div');
+          cardElement.className = 'card card-appear card-stack-effect';
+          cardElement.style.animationDelay = `${index * 0.1}s`;
+          cardElement.dataset.cardId = `${card.suit}-${card.value}`;
+        
+          // Create front and back sides
+          const cardFront = document.createElement('div');
+          cardFront.className = 'card-front';
+          cardFront.textContent = `${card.value} ${card.suit}`;
+        
+          const cardBack = document.createElement('div');
+          cardBack.className = 'card-back';
+        
+          // Append front and back to card
+          cardElement.appendChild(cardFront);
+          cardElement.appendChild(cardBack);
+        
+          // Optional: flip on click
+          cardElement.addEventListener('click', () => {
+    cardElement.classList.toggle('flipped');
+  });
+
+  // Append to container
+  cardContainer.appendChild(cardElement);
+});
                 
                 const codex = calculateCodex(card);
                 const originalCodex = calculateCodex(card, ['♥', '♦', '♠', '♣']);
@@ -1626,3 +1647,4 @@
     </script>
 <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'976103ae45491c4c',t:'MTc1NjM1NDgwOC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
+
