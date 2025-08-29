@@ -84,8 +84,13 @@
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
         .card-back {
-            background: #1f2937 url('JokerV6.png') center center/80px 80px no-repeat;
-            background-size: cover, 80px 80px;
+            background: linear-gradient(135deg, #1f2937 0%, #374151 50%, #1f2937 100%);
+            background-image: 
+                radial-gradient(circle at 25% 25%, rgba(255,255,255,0.1) 0%, transparent 50%),
+                url('./JokerV6.png');
+            background-size: 100%, 80px 80px;
+            background-position: center, center;
+            background-repeat: no-repeat, no-repeat;
             border-radius: 8px;
             box-shadow: 0 4px 8px rgba(0,0,0,0.3);
         }
@@ -100,10 +105,115 @@
         }
         .suit-hearts, .suit-diamonds { color: #dc2626; }
         .suit-spades, .suit-clubs { color: #1f2937; }
+        .pip-pattern {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        .dragging {
+            opacity: 0.6;
+            transform: rotate(8deg) scale(1.05);
+            transition: all 0.2s ease-out;
+            z-index: 1000;
+        }
+        .drop-zone {
+            border: 2px dashed #3b82f6;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(59, 130, 246, 0.2));
+            transform: scale(1.02);
+            transition: all 0.2s ease-out;
+        }
+        .digital-root-ball {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 24px;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            box-shadow: 
+                0 4px 15px rgba(251, 191, 36, 0.4),
+                inset 0 2px 4px rgba(255,255,255,0.3),
+                inset 0 -2px 4px rgba(0,0,0,0.2);
+            animation: bounce-gentle 0.5s ease-in-out;
+            position: relative;
+        }
+        .digital-root-ball::before {
+            content: '';
+            position: absolute;
+            top: 15%;
+            left: 20%;
+            width: 20px;
+            height: 15px;
+            background: radial-gradient(ellipse, rgba(255,255,255,0.6) 0%, transparent 70%);
+            border-radius: 50%;
+            transform: rotate(-45deg);
+        }
+        .card-appear {
+            animation: card-appear 0.5s ease-out forwards;
+        }
+        .progress-bar {
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: linear-gradient(90deg, #8b5cf6, #a855f7, #c084fc, #e879f9);
+            background-size: 200% 100%;
+            animation: shimmer 2s linear infinite;
+        }
+        .shimmer-effect {
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            background-size: 200% 100%;
+            animation: shimmer 2s linear infinite;
+        }
+        .glow-effect {
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+            animation: pulse-slow 2s infinite;
+        }
+        .card-stack-effect {
+            position: relative;
+        }
+        .card-stack-effect::before,
+        .card-stack-effect::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(135deg, #374151, #1f2937);
+            border-radius: 12px;
+            z-index: -1;
+        }
+        .card-stack-effect::after {
+            top: 4px;
+            left: 4px;
+            right: -4px;
+            bottom: -4px;
+            opacity: 0.5;
+        }
+        .floating-animation {
+            animation: float 3s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        .statistical-highlight {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(34, 197, 94, 0.2));
+            border-left: 4px solid #22c55e;
+            transition: all 0.3s ease-out;
+        }
+        .statistical-highlight:hover {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(34, 197, 94, 0.3));
+            transform: translateX(4px);
+        }
+        /* Custom Scrollbar */
         .custom-scrollbar::-webkit-scrollbar { width: 8px; background: #374151; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #6b7280; border-radius: 4px; }
         .custom-scrollbar { scrollbar-width: thin; scrollbar-color: #6b7280 #374151; }
-        .floating-animation { animation: bounceGentle 2s infinite; }
         @media (max-width: 768px) { .card { width: 100px; height: 140px; } }
         @media (prefers-contrast: high) { .card-front { border: 3px solid #000; } }
         @media (prefers-reduced-motion: reduce) {
@@ -271,283 +381,897 @@
         </div>
     </div>
     <script>
-    // --- State ---
-    let currentDeck = [], currentDraw = [], suitOrder = ['♥','♦','♠','♣'];
-    let drawHistory = [];
+        // Global State
+        let currentDeck = [];
+        let currentDraw = [];
+        let suitOrder = ['♥', '♦', '♠', '♣'];
+        let drawHistory = [];
+        let simulationHistory = [];
+        let simulationData = null;
+        let simulationDraws = [];
+        let showDetailedHistory = false;
 
-    // --- Suit Presets ---
-    const suitPresets = {
-        classic: ['♥','♦','♠','♣'],
-        reverse: ['♣','♠','♦','♥'],
-        custom: ['♥','♦','♠','♣']
-    };
+        // Suit configurations
+        const suitPresets = {
+            classic: ['♥', '♦', '♠', '♣'],
+            reverse: ['♣', '♠', '♦', '♥'],
+            custom: ['♥', '♦', '♠', '♣']
+        };
 
-    // --- App Initialization ---
-    document.addEventListener('DOMContentLoaded', () => {
-        initializeDeck();
-        drawCards();
-        setupEventListeners();
-        renderSuitOrder();
-        calculateAndDisplayDigitalRoot();
-        updateCodexDisplay();
-        renderHistory();
-        const savedOrder = localStorage.getItem('suitOrder');
-        if (savedOrder) {
-            suitOrder = JSON.parse(savedOrder);
+        document.addEventListener('DOMContentLoaded', function() {
+            loadFromStorage();
+            initializeDeck();
+            setupEventListeners();
             renderSuitOrder();
-            renderCards();
-            calculateAndDisplayDigitalRoot();
             updateCodexDisplay();
-        }
-    });
+        });
 
-    // --- Deck Logic ---
-    function initializeDeck() {
-        currentDeck = [];
-        for (const suit of ['♥','♦','♠','♣']) {
-            for (let value = 1; value <= 10; value++) {
-                currentDeck.push({ suit, value });
+        // Enhanced Fisher-Yates shuffle algorithm with cryptographic randomization
+        function shuffleDeck(deck) {
+            const shuffled = [...deck];
+            const getRandomValue = (max) => {
+                if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+                    const array = new Uint32Array(1);
+                    crypto.getRandomValues(array);
+                    return array[0] / (0xFFFFFFFF + 1) * max;
+                }
+                return Math.random() * max;
+            };
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(getRandomValue(i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
             }
+            return shuffled;
         }
-    }
-    function shuffleDeck(deck) {
-        const shuffled = [...deck];
-        const getRandomValue = (max) => {
+
+        function getSecureRandom(min, max) {
             if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
                 const array = new Uint32Array(1);
                 crypto.getRandomValues(array);
-                return array[0] / (0xFFFFFFFF + 1) * max;
+                return Math.floor((array[0] / (0xFFFFFFFF + 1)) * (max - min + 1)) + min;
             }
-            return Math.random() * max;
-        };
-        for (let i = shuffled.length - 1; i > 0; i--) {
-            const j = Math.floor(getRandomValue(i + 1));
-            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            return Math.floor(Math.random() * (max - min + 1)) + min;
         }
-        return shuffled;
-    }
 
-    // --- Codex & Digital Root ---
-    function calculateCodex(card, customSuitOrder = null) {
-        const order = customSuitOrder || suitOrder;
-        const suitPosition = order.indexOf(card.suit);
-        return (suitPosition * 10) + card.value;
-    }
-    function calculateDigitalRoot(sum) {
-        if (sum % 10 === 0 && sum > 0) return 10;
-        while (sum >= 10) {
-            sum = sum.toString().split('').reduce((acc, digit) => acc + parseInt(digit), 0);
+        function initializeDeck() {
+            currentDeck = [];
+            for (let suit of ['♥', '♦', '♠', '♣']) {
+                for (let value = 1; value <= 10; value++) {
+                    currentDeck.push({ suit, value });
+                }
+            }
         }
-        return sum;
-    }
 
-    // --- Card Drawing & Rendering ---
-    function drawCards() {
-        const shuffled = shuffleDeck(currentDeck);
-        currentDraw = shuffled.slice(0, 6).map(card => ({ ...card, faceUp: false }));
-        renderCards();
-        calculateAndDisplayDigitalRoot();
-        updateCodexDisplay();
-        saveDrawToHistory();
-        renderHistory();
-    }
-    function flipAllCards() {
-        currentDraw.forEach(card => card.faceUp = true);
-        renderCards();
-    }
-    function renderCards() {
-        const container = document.getElementById('cardsContainer');
-        container.innerHTML = '';
-        currentDraw.forEach((card, idx) => {
-            const cardDiv = document.createElement('div');
-            cardDiv.className = 'card card-appear card-stack-effect' + (card.faceUp ? ' flipped' : '');
-            cardDiv.style.animationDelay = `${idx * 0.1}s`;
-            cardDiv.tabIndex = 0;
-            cardDiv.setAttribute('role', 'button');
-            cardDiv.setAttribute('aria-label', `Card ${idx+1}`);
-            cardDiv.innerHTML = `
-                <div class="card-inner">
-                    <div class="card-back"></div>
-                    <div class="card-front">
-                        <div class="flex justify-between items-start">
-                            <div class="text-xs font-bold ${getSuitClass(card.suit)} leading-tight">
-                                ${card.value === 1 ? 'A' : card.value}<br>${card.suit}
+        function calculateCodex(card, customSuitOrder = null) {
+            const order = customSuitOrder || suitOrder;
+            const suitPosition = order.indexOf(card.suit);
+            return (suitPosition * 10) + card.value;
+        }
+
+        function calculateDigitalRoot(sum) {
+            if (sum % 10 === 0 && sum > 0) return 10;
+            while (sum >= 10) {
+                sum = sum.toString().split('').reduce((acc, digit) => acc + parseInt(digit), 0);
+            }
+            return sum;
+        }
+
+        function generatePipPattern(value, suit) {
+            const suitClass = `suit-${suit === '♥' ? 'hearts' : suit === '♦' ? 'diamonds' : suit === '♠' ? 'spades' : 'clubs'}`;
+            const patterns = {
+                1: `<div class="text-4xl ${suitClass}">${suit}</div>`,
+                2: `<div class="flex flex-col justify-between h-full">
+                      <div class="text-2xl ${suitClass}">${suit}</div>
+                      <div class="text-2xl ${suitClass} transform rotate-180">${suit}</div>
+                    </div>`,
+                3: `<div class="flex flex-col justify-between h-full py-1">
+                      <div class="text-lg ${suitClass}">${suit}</div>
+                      <div class="text-lg ${suitClass}">${suit}</div>
+                      <div class="text-lg ${suitClass} transform rotate-180">${suit}</div>
+                    </div>`,
+                4: `<div class="grid grid-cols-2 gap-2 h-full">
+                      <div class="text-xl ${suitClass}">${suit}</div>
+                      <div class="text-xl ${suitClass}">${suit}</div>
+                      <div class="text-xl ${suitClass} transform rotate-180">${suit}</div>
+                      <div class="text-xl ${suitClass} transform rotate-180">${suit}</div>
+                    </div>`,
+                5: `<div class="grid grid-cols-2 gap-1 h-full relative">
+                      <div class="text-lg ${suitClass}">${suit}</div>
+                      <div class="text-lg ${suitClass}">${suit}</div>
+                      <div class="absolute inset-0 flex items-center justify-center">
+                        <div class="text-lg ${suitClass}">${suit}</div>
+                      </div>
+                      <div class="text-lg ${suitClass} transform rotate-180">${suit}</div>
+                      <div class="text-lg ${suitClass} transform rotate-180">${suit}</div>
+                    </div>`,
+                6: `<div class="grid grid-cols-2 gap-1 h-full py-1">
+                      <div class="text-base ${suitClass}">${suit}</div>
+                      <div class="text-base ${suitClass}">${suit}</div>
+                      <div class="text-base ${suitClass}">${suit}</div>
+                      <div class="text-base ${suitClass}">${suit}</div>
+                      <div class="text-base ${suitClass} transform rotate-180">${suit}</div>
+                      <div class="text-base ${suitClass} transform rotate-180">${suit}</div>
+                    </div>`,
+                7: `<div class="grid grid-cols-2 gap-1 h-full relative">
+                      <div class="text-sm ${suitClass}">${suit}</div>
+                      <div class="text-sm ${suitClass}">${suit}</div>
+                      <div class="text-sm ${suitClass}">${suit}</div>
+                      <div class="absolute top-1/4 left-1/2 transform -translate-x-1/2">
+                        <div class="text-sm ${suitClass}">${suit}</div>
+                      </div>
+                      <div class="text-sm ${suitClass}">${suit}</div>
+                      <div class="text-sm ${suitClass} transform rotate-180">${suit}</div>
+                      <div class="text-sm ${suitClass} transform rotate-180">${suit}</div>
+                    </div>`,
+                8: `<div class="grid grid-cols-2 gap-1 h-full">
+                      <div class="flex flex-col justify-between">
+                        <div class="text-sm ${suitClass}">${suit}</div>
+                        <div class="text-sm ${suitClass}">${suit}</div>
+                        <div class="text-sm ${suitClass}">${suit}</div>
+                        <div class="text-sm ${suitClass} transform rotate-180">${suit}</div>
+                      </div>
+                      <div class="flex flex-col justify-between">
+                        <div class="text-sm ${suitClass}">${suit}</div>
+                        <div class="text-sm ${suitClass}">${suit}</div>
+                        <div class="text-sm ${suitClass} transform rotate-180">${suit}</div>
+                        <div class="text-sm ${suitClass} transform rotate-180">${suit}</div>
+                      </div>
+                    </div>`,
+                9: `<div class="grid grid-cols-2 gap-1 h-full relative">
+                      <div class="flex flex-col justify-between">
+                        <div class="text-sm ${suitClass}">${suit}</div>
+                        <div class="text-sm ${suitClass}">${suit}</div>
+                        <div class="text-sm ${suitClass}">${suit}</div>
+                        <div class="text-sm ${suitClass} transform rotate-180">${suit}</div>
+                      </div>
+                      <div class="absolute inset-0 flex items-center justify-center">
+                        <div class="text-sm ${suitClass}">${suit}</div>
+                      </div>
+                      <div class="flex flex-col justify-between">
+                        <div class="text-sm ${suitClass}">${suit}</div>
+                        <div class="text-sm ${suitClass}">${suit}</div>
+                        <div class="text-sm ${suitClass} transform rotate-180">${suit}</div>
+                        <div class="text-sm ${suitClass} transform rotate-180">${suit}</div>
+                      </div>
+                    </div>`,
+                10: `<div class="grid grid-cols-2 gap-1 h-full">
+                       <div class="flex flex-col justify-between">
+                         <div class="text-xs ${suitClass}">${suit}</div>
+                         <div class="text-xs ${suitClass}">${suit}</div>
+                         <div class="text-xs ${suitClass}">${suit}</div>
+                         <div class="text-xs ${suitClass}">${suit}</div>
+                         <div class="text-xs ${suitClass} transform rotate-180">${suit}</div>
+                       </div>
+                       <div class="flex flex-col justify-between">
+                         <div class="text-xs ${suitClass}">${suit}</div>
+                         <div class="text-xs ${suitClass}">${suit}</div>
+                         <div class="text-xs ${suitClass}">${suit}</div>
+                         <div class="text-xs ${suitClass} transform rotate-180">${suit}</div>
+                         <div class="text-xs ${suitClass} transform rotate-180">${suit}</div>
+                       </div>
+                     </div>`
+            };
+            return patterns[value] || patterns[1];
+        }
+
+        function drawCards() {
+            const shuffled = shuffleDeck(currentDeck);
+            currentDraw = shuffled.slice(0, 6);
+            const timestamp = new Date().toLocaleString();
+            drawHistory.unshift({
+                cards: [...currentDraw],
+                timestamp,
+                suitOrder: [...suitOrder]
+            });
+            renderCards();
+            calculateAndDisplayDigitalRoot();
+            updateHistory();
+            saveToStorage();
+        }
+
+        function renderCards() {
+            const container = document.getElementById('cardsContainer');
+            const fragment = document.createDocumentFragment();
+            container.innerHTML = '';
+            currentDraw.forEach((card, index) => {
+                const cardElement = document.createElement('div');
+                cardElement.className = 'card card-appear card-stack-effect';
+                cardElement.style.animationDelay = `${index * 0.1}s`;
+                cardElement.dataset.cardId = `${card.suit}-${card.value}`;
+                const codex = calculateCodex(card);
+                const originalCodex = calculateCodex(card, ['♥', '♦', '♠', '♣']);
+                const delta = codex - originalCodex;
+                const deltaClass = delta > 0 ? 'text-green-400' : delta < 0 ? 'text-red-400' : 'text-gray-400';
+                const deltaSymbol = delta > 0 ? '+' : '';
+                const suitClass = `suit-${card.suit === '♥' ? 'hearts' : card.suit === '♦' ? 'diamonds' : card.suit === '♠' ? 'spades' : 'clubs'}`;
+                cardElement.innerHTML = `
+                    <div class="card-inner">
+                        <div class="card-back shimmer-effect"></div>
+                        <div class="card-front">
+                            <div class="flex justify-between items-start">
+                                <div class="text-xs font-bold ${suitClass} leading-tight">
+                                    ${card.value === 1 ? 'A' : card.value}<br>${card.suit}
+                                </div>
+                                <div class="bg-gradient-to-r from-blue-500 to-blue-600 text-white text-xs px-2 py-1 rounded-full shadow-lg">
+                                    ${codex}
+                                </div>
                             </div>
-                            <div class="bg-gradient-to-r from-blue-500 to-blue-600 text-white text-xs px-2 py-1 rounded-full shadow-lg">
-                                ${calculateCodex(card)}
+                            <div class="pip-pattern">
+                                ${generatePipPattern(card.value, card.suit)}
                             </div>
-                        </div>
-                        <div class="pip-pattern">
-                            ${generatePipPattern(card.value, card.suit)}
-                        </div>
-                        <div class="flex justify-between items-end">
-                            <div class="text-xs text-gray-400 font-semibold bg-gray-100 px-1 rounded">
-                                Δ${calculateCodex(card) - calculateCodex(card, ['♥','♦','♠','♣'])}
-                            </div>
-                            <div class="text-xs font-bold ${getSuitClass(card.suit)} transform rotate-180 leading-tight">
-                                ${card.value === 1 ? 'A' : card.value}<br>${card.suit}
+                            <div class="flex justify-between items-end">
+                                <div class="text-xs ${deltaClass} font-semibold bg-gray-100 px-1 rounded">
+                                    ${deltaSymbol}${delta}
+                                </div>
+                                <div class="text-xs font-bold ${suitClass} transform rotate-180 leading-tight">
+                                    ${card.value === 1 ? 'A' : card.value}<br>${card.suit}
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            `;
-            cardDiv.addEventListener('click', () => {
-                card.faceUp = !card.faceUp;
-                renderCards();
-                if (navigator.vibrate) navigator.vibrate(50);
+                `;
+                cardElement.addEventListener('click', () => {
+                    cardElement.classList.toggle('flipped');
+                    if (navigator.vibrate) {
+                        navigator.vibrate(50);
+                    }
+                }, { passive: true });
+                fragment.appendChild(cardElement);
             });
-            container.appendChild(cardDiv);
-        });
-    }
-    function getSuitClass(suit) {
-        return suit === '♥' ? 'suit-hearts' : suit === '♦' ? 'suit-diamonds' : suit === '♠' ? 'suit-spades' : 'suit-clubs';
-    }
-    function generatePipPattern(value, suit) {
-        return `<span class="text-4xl ${getSuitClass(suit)}">${suit}</span>`;
-    }
+            container.appendChild(fragment);
+        }
 
-    function calculateAndDisplayDigitalRoot() {
-        if (currentDraw.length === 0) return;
-        const codexSum = currentDraw.reduce((sum, card) => sum + calculateCodex(card), 0);
-        const digitalRoot = calculateDigitalRoot(codexSum);
-        let steps = [`Sum: ${currentDraw.map(card => calculateCodex(card)).join(' + ')} = ${codexSum}`];
-        let tempSum = codexSum;
-        if (tempSum % 10 === 0 && tempSum > 0) {
-            steps.push(`Multiple of 10 → Digital Root = 10`);
-        } else {
-            while (tempSum >= 10) {
-                const digits = tempSum.toString().split('').map(d => parseInt(d));
-                const newSum = digits.reduce((acc, d) => acc + d, 0);
-                steps.push(`${digits.join(' + ')} = ${newSum}`);
-                tempSum = newSum;
+        function calculateAndDisplayDigitalRoot() {
+            if (currentDraw.length === 0) return;
+            const codexSum = currentDraw.reduce((sum, card) => sum + calculateCodex(card), 0);
+            const digitalRoot = calculateDigitalRoot(codexSum);
+            let steps = [`Sum: ${currentDraw.map(card => calculateCodex(card)).join(' + ')} = ${codexSum}`];
+            let tempSum = codexSum;
+            if (tempSum % 10 === 0 && tempSum > 0) {
+                steps.push(`Multiple of 10 → Digital Root = 10`);
+            } else {
+                while (tempSum >= 10) {
+                    const digits = tempSum.toString().split('').map(d => parseInt(d));
+                    const newSum = digits.reduce((acc, d) => acc + d, 0);
+                    steps.push(`${digits.join(' + ')} = ${newSum}`);
+                    tempSum = newSum;
+                }
+            }
+            document.querySelector('#digitalRoot .digital-root-ball').textContent = digitalRoot;
+            document.getElementById('calculation').innerHTML = steps.join('<br>');
+        }
+
+        function renderSuitOrder() {
+            const container = document.getElementById('suitOrder');
+            container.innerHTML = '';
+            suitOrder.forEach((suit, index) => {
+                const suitElement = document.createElement('div');
+                suitElement.className = 'bg-gray-700 p-3 rounded cursor-move flex items-center justify-between';
+                suitElement.draggable = true;
+                suitElement.dataset.suit = suit;
+                suitElement.dataset.index = index;
+                const suitClass = `suit-${suit === '♥' ? 'hearts' : suit === '♦' ? 'diamonds' : suit === '♠' ? 'spades' : 'clubs'}`;
+                suitElement.innerHTML = `
+                    <div class="flex items-center space-x-2">
+                        <span class="text-2xl ${suitClass}">${suit}</span>
+                        <span>Position ${index}</span>
+                    </div>
+                    <span class="text-sm text-gray-400">Codex ${index * 10 + 1}-${index * 10 + 10}</span>
+                `;
+                // Drag events
+                suitElement.addEventListener('dragstart', handleDragStart);
+                suitElement.addEventListener('dragover', handleDragOver);
+                suitElement.addEventListener('drop', handleDrop);
+                suitElement.addEventListener('dragend', handleDragEnd);
+                container.appendChild(suitElement);
+            });
+        }
+
+        let draggedElement = null;
+        function handleDragStart(e) {
+            draggedElement = this;
+            this.classList.add('dragging');
+        }
+        function handleDragOver(e) {
+            e.preventDefault();
+            this.classList.add('drop-zone');
+        }
+        function handleDrop(e) {
+            e.preventDefault();
+            this.classList.remove('drop-zone');
+            if (draggedElement !== this) {
+                const draggedIndex = parseInt(draggedElement.dataset.index);
+                const targetIndex = parseInt(this.dataset.index);
+                [suitOrder[draggedIndex], suitOrder[targetIndex]] = [suitOrder[targetIndex], suitOrder[draggedIndex]];
+                renderSuitOrder();
+                updateCodexDisplay();
+                if (currentDraw.length > 0) {
+                    renderCards();
+                    calculateAndDisplayDigitalRoot();
+                }
+                saveToStorage();
             }
         }
-        document.querySelector('#digitalRoot .digital-root-ball').textContent = digitalRoot;
-        document.getElementById('calculation').innerHTML = steps.join('<br>');
-    }
-
-    function saveDrawToHistory() {
-        if (currentDraw.length === 0) return;
-        drawHistory.push(currentDraw.map(card => ({ ...card })));
-    }
-    function renderHistory() {
-        const list = document.getElementById('historyList');
-        if (!list) return;
-        if (drawHistory.length === 0) {
-            list.innerHTML = '<p class="text-gray-400">No draws yet.</p>';
-            return;
+        function handleDragEnd(e) {
+            this.classList.remove('dragging');
+            document.querySelectorAll('.drop-zone').forEach(el => el.classList.remove('drop-zone'));
         }
-        list.innerHTML = '';
-        drawHistory.slice(-20).reverse().forEach((draw, idx) => {
-            const item = document.createElement('div');
-            item.className = 'bg-gray-700 rounded p-2 flex flex-wrap gap-2 text-xs';
-            item.innerHTML = draw.map(card =>
-                `<span class="${getSuitClass(card.suit)}">${card.value === 1 ? 'A' : card.value}${card.suit}</span>`
-            ).join(' ');
-            list.appendChild(item);
-        });
-    }
-    function clearHistory() {
-        drawHistory = [];
-        renderHistory();
-    }
 
-    function renderSuitOrder() {
-        const container = document.getElementById('suitOrder');
-        container.innerHTML = '';
-        suitOrder.forEach((suit, idx) => {
-            const suitDiv = document.createElement('div');
-            suitDiv.className = 'bg-gray-700 p-3 rounded flex items-center justify-between';
-            suitDiv.dataset.suit = suit;
-            suitDiv.dataset.index = idx;
-            suitDiv.innerHTML = `
-                <div class="flex items-center space-x-2">
-                    <span class="text-2xl ${getSuitClass(suit)}">${suit}</span>
-                    <span>Position ${idx}</span>
-                </div>
-                <span class="text-sm text-gray-400">Codex ${idx*10+1}-${idx*10+10}</span>
-            `;
-            container.appendChild(suitDiv);
-        });
-    }
-    function updateCodexDisplay() {
-        const display = document.getElementById('codexDisplay');
-        if (currentDraw.length === 0) {
-            display.innerHTML = '<p class="text-gray-400">Draw cards to see codex values</p>';
-            return;
-        }
-        let html = '';
-        currentDraw.forEach(card => {
-            const currentCodex = calculateCodex(card);
-            const originalCodex = calculateCodex(card, ['♥', '♦', '♠', '♣']);
-            const delta = currentCodex - originalCodex;
-            const deltaClass = delta > 0 ? 'text-green-400' : delta < 0 ? 'text-red-400' : 'text-gray-400';
-            const deltaSymbol = delta > 0 ? '+' : '';
-            html += `
-                <div class="flex justify-between text-xs mb-1">
-                    <span>${card.value === 1 ? 'A' : card.value}${card.suit}</span>
-                    <span>Current: ${currentCodex}</span>
-                    <span>Original: ${originalCodex}</span>
-                    <span class="${deltaClass}">${deltaSymbol}${delta}</span>
-                </div>
-            `;
-        });
-        display.innerHTML = html;
-    }
-
-    function setupEventListeners() {
-        document.getElementById('drawCards').addEventListener('click', drawCards);
-        document.getElementById('flipAll').addEventListener('click', flipAllCards);
-        document.getElementById('clearHistory').addEventListener('click', clearHistory);
-        document.querySelectorAll('.preset-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const preset = btn.dataset.preset;
-                suitOrder = [...suitPresets[preset]];
-                renderSuitOrder();
-                renderCards();
-                calculateAndDisplayDigitalRoot();
-                updateCodexDisplay();
+        function updateCodexDisplay() {
+            const display = document.getElementById('codexDisplay');
+            if (currentDraw.length === 0) {
+                display.innerHTML = '<p class="text-gray-400">Draw cards to see codex values</p>';
+                return;
+            }
+            let html = '';
+            currentDraw.forEach(card => {
+                const currentCodex = calculateCodex(card);
+                const originalCodex = calculateCodex(card, ['♥', '♦', '♠', '♣']);
+                const delta = currentCodex - originalCodex;
+                const deltaClass = delta > 0 ? 'text-green-400' : delta < 0 ? 'text-red-400' : 'text-gray-400';
+                const deltaSymbol = delta > 0 ? '+' : '';
+                html += `
+                    <div class="flex justify-between text-xs mb-1">
+                        <span>${card.value === 1 ? 'A' : card.value}${card.suit}</span>
+                        <span>Current: ${currentCodex}</span>
+                        <span>Original: ${originalCodex}</span>
+                        <span class="${deltaClass}">${deltaSymbol}${delta}</span>
+                    </div>
+                `;
             });
-        });
-        document.getElementById('exportCSV').addEventListener('click', () => {
-            const csv = drawHistory.map(draw =>
-                draw.map(card => `${card.value === 1 ? 'A' : card.value}${card.suit}`).join(',')
-            ).join('\n');
-            downloadFile('draw_history.csv', csv, 'text/csv');
-        });
-        document.getElementById('exportJSON').addEventListener('click', () => {
-            const json = JSON.stringify(drawHistory, null, 2);
-            downloadFile('draw_history.json', json, 'application/json');
-        });
-        document.getElementById('saveSuitOrder').addEventListener('click', () => {
-            localStorage.setItem('suitOrder', JSON.stringify(suitOrder));
-            alert('Suit order saved!');
-        });
-        document.getElementById('downloadManifest').addEventListener('click', () => {
-            fetch('manifest.json')
-                .then(r => r.text())
-                .then(txt => downloadFile('manifest.json', txt, 'application/json'));
-        });
-        document.getElementById('runSimulation').addEventListener('click', () => {
-            alert("Monte Carlo simulation logic not yet implemented!");
-        });
-        document.getElementById('toggleHistoryView').addEventListener('click', () => {
-            alert("Simulation history view toggle not implemented.");
-        });
-        document.getElementById('clearSimulationHistory').addEventListener('click', () => {
-            alert("Simulation history clear not implemented.");
-        });
-    }
+            display.innerHTML = html;
+        }
 
-    function downloadFile(filename, content, type) {
-        const blob = new Blob([content], { type });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        a.click();
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
-    }
+        async function runSimulation() {
+            const button = document.getElementById('runSimulation');
+            const progressContainer = document.getElementById('progressContainer');
+            const progressBar = document.getElementById('progressBar');
+            const progressText = document.getElementById('progressText');
+            const resultsContainer = document.getElementById('simulationResults');
+            button.disabled = true;
+            button.innerHTML = '⚡ Running Simulation...';
+            button.classList.add('animate-pulse');
+            progressContainer.classList.remove('hidden');
+            resultsContainer.classList.add('hidden');
+            const cardFrequency = new Map();
+            const rootFrequency = new Map();
+            const draws = 500;
+            const startTime = performance.now();
+            simulationDraws = [];
+            for (let suit of ['♥', '♦', '♠', '♣']) {
+                for (let value = 1; value <= 10; value++) {
+                    const key = `${value}${suit}`;
+                    cardFrequency.set(key, 0);
+                }
+            }
+            for (let i = 1; i <= 10; i++) {
+                rootFrequency.set(i, 0);
+            }
+            const batchSize = 50;
+            let completed = 0;
+            const processBatch = async () => {
+                const batchEnd = Math.min(completed + batchSize, draws);
+                for (let i = completed; i < batchEnd; i++) {
+                    const shuffled = shuffleDeck(currentDeck);
+                    const draw = shuffled.slice(0, 6);
+                    const codexSum = draw.reduce((sum, card) => sum + calculateCodex(card), 0);
+                    const digitalRoot = calculateDigitalRoot(codexSum);
+                    const drawData = {
+                        drawNumber: i + 1,
+                        cards: draw.map(card => ({
+                            ...card,
+                            codex: calculateCodex(card),
+                            display: `${card.value === 1 ? 'A' : card.value}${card.suit}`
+                        })),
+                        codexSum,
+                        digitalRoot,
+                        timestamp: new Date().toLocaleString()
+                    };
+                    simulationDraws.push(drawData);
+                    draw.forEach(card => {
+                        const key = `${card.value}${card.suit}`;
+                        cardFrequency.set(key, cardFrequency.get(key) + 1);
+                    });
+                    rootFrequency.set(digitalRoot, rootFrequency.get(digitalRoot) + 1);
+                }
+                completed = batchEnd;
+                const percentage = (completed / draws) * 100;
+                progressBar.style.width = `${percentage}%`;
+                progressText.innerHTML = `
+                    <span class="inline-flex items-center space-x-2">
+                        <span>⚡</span>
+                        <span>${completed} / ${draws} draws completed</span>
+                        <span>📊</span>
+                    </span>
+                `;
+                if (completed < draws) {
+                    await new Promise(resolve => requestAnimationFrame(resolve));
+                    return processBatch();
+                }
+            };
+            await processBatch();
+            const endTime = performance.now();
+            const executionTime = ((endTime - startTime) / 1000).toFixed(2);
+            const cardFrequencyObj = Object.fromEntries(cardFrequency);
+            const rootFrequencyObj = Object.fromEntries(rootFrequency);
+            simulationData = {
+                cardFrequency: cardFrequencyObj,
+                rootFrequency: rootFrequencyObj,
+                draws: [...simulationDraws],
+                timestamp: new Date().toLocaleString(),
+                suitOrder: [...suitOrder],
+                executionTime,
+                totalDraws: draws,
+                averageTimePerDraw: (executionTime / draws * 1000).toFixed(3) + 'ms'
+            };
+            simulationHistory.unshift(simulationData);
+            await displaySimulationResults();
+            displaySimulationDrawHistory();
+            button.disabled = false;
+            button.innerHTML = '✅ Simulation Complete';
+            button.classList.remove('animate-pulse');
+            setTimeout(() => {
+                button.innerHTML = '🚀 Run Simulation';
+            }, 2000);
+            progressContainer.classList.add('hidden');
+            resultsContainer.classList.remove('hidden');
+            if (executionTime < 1) {
+                console.log(`🚀 High-performance simulation completed in ${executionTime}s`);
+            }
+            saveToStorage();
+        }
+
+        async function displaySimulationResults() {
+            if (!simulationData) return;
+            const { cardFrequency, rootFrequency, executionTime, averageTimePerDraw } = simulationData;
+            const topCardsContainer = document.getElementById('topCards');
+            const sortedCards = Object.entries(cardFrequency)
+                .sort(([,a], [,b]) => b - a)
+                .slice(0, 6);
+            topCardsContainer.innerHTML = '';
+            const metricsElement = document.createElement('div');
+            metricsElement.className = 'bg-gradient-to-r from-blue-900/30 to-purple-900/30 p-2 rounded-lg mb-3 text-xs border border-blue-500/20';
+            metricsElement.innerHTML = `
+                <div class="flex justify-between items-center">
+                    <span>⚡ Execution Time: ${executionTime}s</span>
+                    <span>🎯 Avg/Draw: ${averageTimePerDraw}</span>
+                </div>
+            `;
+            topCardsContainer.appendChild(metricsElement);
+            const cardGrid = document.createElement('div');
+            cardGrid.className = 'grid grid-cols-3 md:grid-cols-6 gap-4 justify-items-center mb-4';
+            for (let i = 0; i < sortedCards.length; i++) {
+                const [cardStr, frequency] = sortedCards[i];
+                const percentage = ((frequency / 500) * 100).toFixed(1);
+                const expected = 7.5;
+                const diff = (parseFloat(percentage) - expected).toFixed(1);
+                const diffClass = diff > 0 ? 'text-green-400' : diff < 0 ? 'text-red-400' : 'text-gray-400';
+                const diffIcon = diff > 0 ? '📈' : diff < 0 ? '📉' : '➖';
+                const suit = cardStr.slice(-1);
+                const valueStr = cardStr.slice(0, -1);
+                const value = valueStr === 'A' ? 1 : parseInt(valueStr);
+                const card = { suit, value };
+                const codex = calculateCodex(card);
+                const originalCodex = calculateCodex(card, ['♥', '♦', '♠', '♣']);
+                const delta = codex - originalCodex;
+                const deltaClass = delta > 0 ? 'text-green-400' : delta < 0 ? 'text-red-400' : 'text-gray-400';
+                const deltaSymbol = delta > 0 ? '+' : '';
+                const suitClass = `suit-${suit === '♥' ? 'hearts' : suit === '♦' ? 'diamonds' : suit === '♠' ? 'spades' : 'clubs'}`;
+                const cardElement = document.createElement('div');
+                cardElement.className = 'card card-appear card-stack-effect flipped glow-effect';
+                cardElement.style.animationDelay = `${i * 0.1}s`;
+                cardElement.dataset.cardId = `${suit}-${value}`;
+                cardElement.innerHTML = `
+                    <div class="card-inner">
+                        <div class="card-back shimmer-effect"></div>
+                        <div class="card-front">
+                            <div class="flex justify-between items-start">
+                                <div class="text-xs font-bold ${suitClass} leading-tight">
+                                    ${value === 1 ? 'A' : value}<br>${suit}
+                                </div>
+                                <div class="bg-gradient-to-r from-blue-500 to-blue-600 text-white text-xs px-2 py-1 rounded-full shadow-lg">
+                                    ${codex}
+                                </div>
+                            </div>
+                            <div class="pip-pattern">
+                                ${generatePipPattern(value, suit)}
+                            </div>
+                            <div class="flex justify-between items-end">
+                                <div class="text-xs ${deltaClass} font-semibold bg-gray-100 px-1 rounded">
+                                    ${deltaSymbol}${delta}
+                                </div>
+                                <div class="text-xs font-bold ${suitClass} transform rotate-180 leading-tight">
+                                    ${value === 1 ? 'A' : value}<br>${suit}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                cardGrid.appendChild(cardElement);
+            }
+            topCardsContainer.appendChild(cardGrid);
+            const statsContainer = document.createElement('div');
+            statsContainer.className = 'grid grid-cols-3 md:grid-cols-6 gap-2 text-center text-xs';
+            for (let i = 0; i < sortedCards.length; i++) {
+                const [cardStr, frequency] = sortedCards[i];
+                const percentage = ((frequency / 500) * 100).toFixed(1);
+                const expected = 7.5;
+                const diff = (parseFloat(percentage) - expected).toFixed(1);
+                const diffClass = diff > 0 ? 'text-green-400' : diff < 0 ? 'text-red-400' : 'text-gray-400';
+                const diffIcon = diff > 0 ? '📈' : diff < 0 ? '📉' : '➖';
+                const statElement = document.createElement('div');
+                statElement.className = 'bg-gray-800/50 rounded-lg p-2 border border-gray-700';
+                statElement.innerHTML = `
+                    <div class="font-bold text-white">${i + 1}</div>
+                    <div class="font-semibold text-yellow-400">${frequency} times</div>
+                    <div class="text-gray-300">${percentage}%</div>
+                    <div class="${diffClass} flex items-center justify-center space-x-1 mt-1">
+                        <span>${diffIcon}</span>
+                        <span>${diff > 0 ? '+' : ''}${diff}%</span>
+                    </div>
+                `;
+                statsContainer.appendChild(statElement);
+            }
+            topCardsContainer.appendChild(statsContainer);
+            const rootContainer = document.getElementById('rootDistribution');
+            rootContainer.innerHTML = '';
+            for (let i = 1; i <= 10; i++) {
+                const frequency = rootFrequency[i] || 0;
+                const percentage = ((frequency / 500) * 100).toFixed(1);
+                const isHighFreq = frequency > 50;
+                const rootElement = document.createElement('div');
+                rootElement.className = `text-center transform transition-all duration-300 hover:scale-110 ${isHighFreq ? 'glow-effect' : ''}`;
+                rootElement.style.animationDelay = `${i * 0.05}s`;
+                rootElement.innerHTML = `
+                    <div class="digital-root-ball mx-auto mb-2 ${isHighFreq ? 'animate-bounce-gentle' : ''}" style="width: 45px; height: 45px; font-size: 18px;">
+                        ${i}
+                    </div>
+                    <div class="text-xs">
+                        <div class="font-bold text-white">${frequency}</div>
+                        <div class="text-gray-400">${percentage}%</div>
+                        ${isHighFreq ? '<div class="text-yellow-400 text-xs">🔥 Hot</div>' : ''}
+                    </div>
+                `;
+                rootContainer.appendChild(rootElement);
+                setTimeout(() => {
+                    rootElement.classList.add('card-appear');
+                }, i * 50);
+            }
+            const totalCards = Object.values(cardFrequency).reduce((sum, freq) => sum + freq, 0);
+            const mostFrequentRoot = Object.entries(rootFrequency).reduce((max, [root, freq]) => 
+                freq > max.freq ? { root: parseInt(root), freq } : max, { root: 1, freq: 0 });
+            console.log(`📊 Simulation Summary:
+                Total Cards Drawn: ${totalCards}
+                Most Frequent Digital Root: ${mostFrequentRoot.root} (${mostFrequentRoot.freq} times)
+                Execution Time: ${executionTime}s
+                Performance: ${averageTimePerDraw} per draw`);
+        }
+
+        function displaySimulationDrawHistory() {
+            if (!simulationData) return;
+            const historyContainer = document.getElementById('simulationDrawHistory');
+            historyContainer.innerHTML = '';
+            if (showDetailedHistory) {
+                if (simulationDraws && simulationDraws.length > 0) {
+                    const recentDraws = simulationDraws.slice(-20).reverse();
+                    recentDraws.forEach((drawData, index) => {
+                        const historyItem = document.createElement('div');
+                        historyItem.className = 'bg-gray-700 p-2 rounded cursor-pointer hover:bg-gray-600 transition-colors';
+                        const cards = drawData.cards.map(card => card.display).join(' ');
+                        historyItem.innerHTML = `
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <div class="text-sm font-semibold">${cards}</div>
+                                    <div class="text-xs text-gray-400">Draw #${drawData.drawNumber} - ${drawData.timestamp}</div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-sm">Root: ${drawData.digitalRoot}</div>
+                                    <div class="text-xs text-gray-400">Sum: ${drawData.codexSum}</div>
+                                </div>
+                            </div>
+                        `;
+                        historyItem.addEventListener('click', () => {
+                            currentDraw = drawData.cards.map(card => ({
+                                suit: card.suit,
+                                value: card.value
+                            }));
+                            renderCards();
+                            calculateAndDisplayDigitalRoot();
+                            updateCodexDisplay();
+                        });
+                        historyContainer.appendChild(historyItem);
+                    });
+                    if (simulationDraws.length > 20) {
+                        const infoElement = document.createElement('div');
+                        infoElement.className = 'text-center text-xs text-gray-400 py-2 border-t border-gray-600 mt-2';
+                        infoElement.innerHTML = `Showing last 20 of ${simulationDraws.length} draws. Click any draw to recreate it.`;
+                        historyContainer.appendChild(infoElement);
+                    }
+                } else {
+                    historyContainer.innerHTML = '<div class="text-center text-gray-400 py-8">No detailed draw data available.</div>';
+                }
+            } else {
+                const { cardFrequency, rootFrequency } = simulationData;
+                const topCards = Object.entries(cardFrequency)
+                    .sort(([,a], [,b]) => b - a)
+                    .slice(0, 6);
+                const topRoot = Object.entries(rootFrequency)
+                    .sort(([,a], [,b]) => b - a)[0];
+                const summaryElement = document.createElement('div');
+                summaryElement.className = 'bg-gradient-to-r from-purple-900/50 to-pink-900/50 p-4 rounded-lg border border-purple-500/30';
+                let topCardsHtml = '<div class="mb-4"><div class="text-sm font-semibold text-purple-200 mb-3 flex items-center space-x-2"><span>🏆</span><span>Top 6 Most Frequent Cards</span></div><div class="grid grid-cols-3 gap-2">';
+                topCards.forEach(([cardStr, frequency], index) => {
+                    const percentage = ((frequency / 500) * 100).toFixed(1);
+                    const expected = 7.5;
+                    const diff = (parseFloat(percentage) - expected).toFixed(1);
+                    const diffClass = diff > 0 ? 'text-green-400' : diff < 0 ? 'text-red-400' : 'text-gray-400';
+                    const diffIcon = diff > 0 ? '📈' : diff < 0 ? '📉' : '➖';
+                    const suit = cardStr.slice(-1);
+                    const valueStr = cardStr.slice(0, -1);
+                    const value = valueStr === 'A' ? 1 : parseInt(valueStr);
+                    const card = { suit, value };
+                    const codex = calculateCodex(card);
+                    topCardsHtml += `
+                        <div class="bg-gray-800/50 rounded-lg p-2 text-center border border-gray-700">
+                            <div class="text-lg font-bold text-white mb-1">${cardStr}</div>
+                            <div class="text-xs text-blue-400 font-semibold mb-1">Codex: ${codex}</div>
+                            <div class="text-xs text-yellow-400 font-semibold">${frequency} times</div>
+                            <div class="text-xs text-gray-300">${percentage}%</div>
+                            <div class="${diffClass} text-xs flex items-center justify-center space-x-1 mt-1">
+                                <span>${diffIcon}</span>
+                                <span>${diff > 0 ? '+' : ''}${diff}%</span>
+                            </div>
+                        </div>
+                    `;
+                });
+                topCardsHtml += '</div></div>';
+                const rootPercentage = ((topRoot[1] / 500) * 100).toFixed(1);
+                const topRootHtml = `
+                    <div class="mb-4">
+                        <div class="text-sm font-semibold text-purple-200 mb-3 flex items-center space-x-2">
+                            <span>🎯</span>
+                            <span>Most Frequent Digital Root</span>
+                        </div>
+                        <div class="bg-gray-800/50 rounded-lg p-3 text-center border border-gray-700">
+                            <div class="digital-root-ball mx-auto mb-2" style="width: 50px; height: 50px; font-size: 20px;">
+                                ${topRoot[0]}
+                            </div>
+                            <div class="text-sm">
+                                <div class="font-bold text-white">${topRoot[1]} times</div>
+                                <div class="text-yellow-400 font-semibold">${rootPercentage}%</div>
+                                <div class="text-xs text-gray-400 mt-1">out of 500 draws</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                const metricsHtml = `
+                    <div class="border-t border-purple-500/30 pt-3">
+                        <div class="text-sm font-semibold text-purple-200 mb-2 flex items-center space-x-2">
+                            <span>⚡</span>
+                            <span>Simulation Performance</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 text-xs">
+                            <div class="text-gray-300">Total Draws: <span class="text-white font-semibold">${simulationData.totalDraws}</span></div>
+                            <div class="text-gray-300">Execution: <span class="text-white font-semibold">${simulationData.executionTime}s</span></div>
+                            <div class="text-gray-300">Avg/Draw: <span class="text-white font-semibold">${simulationData.averageTimePerDraw}</span></div>
+                            <div class="text-gray-300">Completed: <span class="text-white font-semibold">${simulationData.timestamp}</span></div>
+                        </div>
+                    </div>
+                `;
+                summaryElement.innerHTML = topCardsHtml + topRootHtml + metricsHtml;
+                historyContainer.appendChild(summaryElement);
+            }
+        }
+
+        function updateHistory() {
+            const historyList = document.getElementById('historyList');
+            historyList.innerHTML = '';
+            drawHistory.slice(0, 10).forEach((entry, index) => {
+                const historyItem = document.createElement('div');
+                historyItem.className = 'bg-gray-700 p-2 rounded cursor-pointer hover:bg-gray-600 transition-colors';
+                const cards = entry.cards.map(card => `${card.value === 1 ? 'A' : card.value}${card.suit}`).join(' ');
+                const codexSum = entry.cards.reduce((sum, card) => sum + calculateCodex(card, entry.suitOrder), 0);
+                const digitalRoot = calculateDigitalRoot(codexSum);
+                historyItem.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <div class="text-sm font-semibold">${cards}</div>
+                            <div class="text-xs text-gray-400">${entry.timestamp}</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-sm">Root: ${digitalRoot}</div>
+                            <div class="text-xs text-gray-400">Sum: ${codexSum}</div>
+                        </div>
+                    </div>
+                `;
+                historyItem.addEventListener('click', () => {
+                    currentDraw = [...entry.cards];
+                    suitOrder = [...entry.suitOrder];
+                    renderSuitOrder();
+                    renderCards();
+                    calculateAndDisplayDigitalRoot();
+                    updateCodexDisplay();
+                });
+                historyList.appendChild(historyItem);
+            });
+        }
+
+        function setupEventListeners() {
+            document.getElementById('drawCards').addEventListener('click', drawCards);
+            document.getElementById('flipAll').addEventListener('click', () => {
+                document.querySelectorAll('.card').forEach(card => {
+                    card.classList.add('flipped');
+                });
+            });
+            document.querySelectorAll('.preset-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const preset = btn.dataset.preset;
+                    suitOrder = [...suitPresets[preset]];
+                    renderSuitOrder();
+                    updateCodexDisplay();
+                    if (currentDraw.length > 0) {
+                        renderCards();
+                        calculateAndDisplayDigitalRoot();
+                    }
+                    saveToStorage();
+                });
+            });
+            document.getElementById('runSimulation').addEventListener('click', runSimulation);
+            document.getElementById('clearHistory').addEventListener('click', () => {
+                drawHistory = [];
+                simulationHistory = [];
+                simulationDraws = [];
+                updateHistory();
+                saveToStorage();
+            });
+            document.getElementById('clearSimulationHistory').addEventListener('click', () => {
+                if (confirm('Clear simulation draw history? This will remove all simulation data but keep your manual draws.')) {
+                    simulationHistory = [];
+                    simulationDraws = [];
+                    simulationData = null;
+                    document.getElementById('simulationDrawHistory').innerHTML = '<div class="text-center text-gray-400 py-8">No simulation data available. Run a simulation to see draw history.</div>';
+                    document.getElementById('simulationResults').classList.add('hidden');
+                    saveToStorage();
+                }
+            });
+            document.getElementById('toggleHistoryView').addEventListener('click', () => {
+                showDetailedHistory = !showDetailedHistory;
+                const button = document.getElementById('toggleHistoryView');
+                button.innerHTML = showDetailedHistory ? '📊 Summary' : '📋 Detailed';
+                displaySimulationDrawHistory();
+            });
+            document.getElementById('exportCSV').addEventListener('click', exportCSV);
+            document.getElementById('exportJSON').addEventListener('click', exportJSON);
+            document.getElementById('saveSuitOrder').addEventListener('click', saveSuitOrderConfig);
+            document.getElementById('downloadManifest').addEventListener('click', downloadManifest);
+        }
+
+        function exportCSV() {
+            if (!simulationData) {
+                alert('Run a simulation first to export data');
+                return;
+            }
+            let csv = 'Card,Frequency,Percentage\n';
+            Object.entries(simulationData.cardFrequency).forEach(([card, freq]) => {
+                const percentage = ((freq / 500) * 100).toFixed(2);
+                csv += `${card},${freq},${percentage}%\n`;
+            });
+            csv += '\nDigital Root,Frequency,Percentage\n';
+            Object.entries(simulationData.rootFrequency).forEach(([root, freq]) => {
+                const percentage = ((freq / 500) * 100).toFixed(2);
+                csv += `${root},${freq},${percentage}%\n`;
+            });
+            if (simulationData && simulationData.draws && simulationData.draws.length > 0) {
+                csv += '\nSimulation Draw History\n';
+                csv += 'Draw Number,Cards,Codex Values,Codex Sum,Digital Root,Timestamp\n';
+                simulationData.draws.forEach(draw => {
+                    const cardsStr = draw.cards.map(card => card.display).join(' ');
+                    const codexStr = draw.cards.map(card => card.codex).join(' ');
+                    csv += `${draw.drawNumber},"${cardsStr}","${codexStr}",${draw.codexSum},${draw.digitalRoot},${draw.timestamp}\n`;
+                });
+            }
+            downloadFile(csv, 'lottery-analysis-data.csv', 'text/csv');
+        }
+
+        function exportJSON() {
+            const data = {
+                drawHistory,
+                simulationHistory,
+                currentSuitOrder: suitOrder,
+                exportTimestamp: new Date().toISOString()
+            };
+            downloadFile(JSON.stringify(data, null, 2), 'card-draw-data.json', 'application/json');
+        }
+
+        function saveSuitOrderConfig() {
+            const name = prompt('Enter a name for this suit order configuration:');
+            if (name) {
+                const savedConfigs = JSON.parse(localStorage.getItem('suitConfigs') || '{}');
+                savedConfigs[name] = [...suitOrder];
+                localStorage.setItem('suitConfigs', JSON.stringify(savedConfigs));
+                alert(`Suit order "${name}" saved successfully!`);
+            }
+        }
+
+        function downloadManifest() {
+            const manifest = {
+                name: "Card Draw - Random Luck App",
+                short_name: "Card Draw",
+                description: "Interactive probability exploration with playing cards",
+                start_url: "/",
+                display: "standalone",
+                background_color: "#1f2937",
+                theme_color: "#1f2937",
+                icons: [{
+                    src: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTkyIiBoZWlnaHQ9IjE5MiIgdmlld0JveD0iMCAwIDE5MiAxOTIiIGZpbGw9IiMxOTI5NTciIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjE5MiIgaGVpZ2h0PSIxOTIiIHJ4PSIxNiIgZmlsbD0iIzE5Mjk1NyIvPjwvc3ZnPg==",
+                    sizes: "192x192",
+                    type: "image/svg+xml"
+                }]
+            };
+            downloadFile(JSON.stringify(manifest, null, 2), 'manifest.json', 'application/json');
+        }
+
+        function downloadFile(content, filename, contentType) {
+            const blob = new Blob([content], { type: contentType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function saveToStorage() {
+            const data = {
+                drawHistory,
+                simulationHistory,
+                suitOrder,
+                currentDraw
+            };
+            localStorage.setItem('cardDrawApp', JSON.stringify(data));
+        }
+
+        function loadFromStorage() {
+            const saved = localStorage.getItem('cardDrawApp');
+            if (saved) {
+                const data = JSON.parse(saved);
+                drawHistory = data.drawHistory || [];
+                simulationHistory = data.simulationHistory || [];
+                suitOrder = data.suitOrder || ['♥', '♦', '♠', '♣'];
+                currentDraw = data.currentDraw || [];
+                if (simulationHistory.length > 0) {
+                    simulationData = simulationHistory[0];
+                }
+                updateHistory();
+                if (currentDraw.length > 0) {
+                    renderCards();
+                    calculateAndDisplayDigitalRoot();
+                }
+            }
+        }
+
+        // PWA Install prompt
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            const installBtn = document.createElement('button');
+            installBtn.textContent = 'Install App';
+            installBtn.className = 'fixed bottom-4 right-4 bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg font-semibold transition-colors z-50';
+            installBtn.addEventListener('click', () => {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.log('User accepted the install prompt');
+                    }
+                    deferredPrompt = null;
+                    installBtn.remove();
+                });
+            });
+            document.body.appendChild(installBtn);
+        });
     </script>
 </body>
 </html>
