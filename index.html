@@ -6,10 +6,8 @@
     <title>Card Draw - Random Luck App</title>
     <meta name="description" content="Interactive probability exploration with playing cards and mathematical analysis">
     <meta name="theme-color" content="#1f2937">
-
-    <!-- PWA Manifest (shortened for clarity) -->
+    <!-- PWA Manifest -->
     <link rel="manifest" href="manifest.json">
-
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -52,7 +50,6 @@
             }
         }
     </script>
-
     <style>
         .card {
             width: 120px;
@@ -103,33 +100,24 @@
         }
         .suit-hearts, .suit-diamonds { color: #dc2626; }
         .suit-spades, .suit-clubs { color: #1f2937; }
-
-        /* ... (rest of your original CSS for effects, scrollbars, etc) ... */
-
-        @media (max-width: 768px) {
-            .card { width: 100px; height: 140px; }
-        }
-        @media (prefers-contrast: high) {
-            .card-front { border: 3px solid #000; }
-        }
+        .custom-scrollbar::-webkit-scrollbar { width: 8px; background: #374151; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #6b7280; border-radius: 4px; }
+        .custom-scrollbar { scrollbar-width: thin; scrollbar-color: #6b7280 #374151; }
+        .floating-animation { animation: bounceGentle 2s infinite; }
+        @media (max-width: 768px) { .card { width: 100px; height: 140px; } }
+        @media (prefers-contrast: high) { .card-front { border: 3px solid #000; } }
         @media (prefers-reduced-motion: reduce) {
-            .card-inner, .floating-animation, .card-appear {
-                animation: none !important;
-                transition: none !important;
-            }
+            .card-inner, .floating-animation, .card-appear { animation: none !important; transition: none !important; }
         }
     </style>
 </head>
 <body class="bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 min-h-screen text-white">
-    <!-- Service Worker Registration -->
     <script>
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('service-worker.js');
     }
     </script>
-
     <div class="container mx-auto px-4 py-8 max-w-7xl">
-        <!-- Header (shortened for clarity) -->
         <div class="text-center mb-8 relative">
             <div class="floating-animation">
                 <h1 class="text-5xl font-bold mb-4 bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 bg-clip-text text-transparent">
@@ -138,10 +126,7 @@
             </div>
             <p class="text-xl text-gray-300 mb-2">Interactive probability exploration with mathematical analysis</p>
         </div>
-
-        <!-- Main Controls -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-            <!-- Card Drawing Section -->
             <div class="lg:col-span-2 bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl p-6 shadow-2xl border border-gray-700">
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-2xl font-bold flex items-center space-x-2">
@@ -158,7 +143,6 @@
                     </div>
                 </div>
                 <div id="cardsContainer" class="grid grid-cols-3 md:grid-cols-6 gap-4 justify-items-center mb-6"></div>
-                <!-- Digital Root Display -->
                 <div class="text-center bg-gradient-to-r from-purple-900/30 to-blue-900/30 rounded-lg p-4 border border-purple-500/20">
                     <h3 class="text-xl font-semibold mb-4 flex items-center justify-center space-x-2">
                         <span>🔮</span>
@@ -171,7 +155,6 @@
                     </div>
                 </div>
             </div>
-            <!-- Suit Remapping Section (shortened for clarity) -->
             <div class="bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl p-6 shadow-2xl border border-gray-700">
                 <h2 class="text-xl font-bold mb-4 flex items-center space-x-2">
                     <span>⚙️</span>
@@ -189,8 +172,6 @@
                 </div>
             </div>
         </div>
-
-        <!-- Simulation Section (shortened for clarity) -->
         <div class="bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl p-6 mb-8 shadow-2xl border border-gray-700">
             <div class="flex flex-col lg:flex-row lg:justify-between lg:items-center mb-6 space-y-4 lg:space-y-0">
                 <div>
@@ -240,10 +221,10 @@
                             <span>Simulation Draw History</span>
                         </h3>
                         <div class="flex space-x-2">
-                            <button id="toggleHistoryView" class="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 px-3 py-1 rounded text-xs font-semibold transition-all">
+                            <button id="toggleHistoryView" class="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 px-3 py-1 rounded text-xs font-semibold transition-all duration-200">
                                 📊 Summary
                             </button>
-                            <button id="clearSimulationHistory" class="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 px-3 py-1 rounded text-xs font-semibold transition-all">
+                            <button id="clearSimulationHistory" class="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 px-3 py-1 rounded text-xs font-semibold transition-all duration-200">
                                 🗑️ Clear
                             </button>
                         </div>
@@ -252,8 +233,6 @@
                 </div>
             </div>
         </div>
-
-        <!-- History Section and Export & Data (shortened for clarity) -->
         <div class="bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl p-6 mb-8 shadow-2xl border border-gray-700">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-xl font-bold flex items-center space-x-2">
@@ -291,13 +270,10 @@
             </div>
         </div>
     </div>
-
-    <!-- Main JS -->
     <script>
     // --- State ---
     let currentDeck = [], currentDraw = [], suitOrder = ['♥','♦','♠','♣'];
-    let drawHistory = [], simulationHistory = [], simulationDraws = [];
-    let showDetailedHistory = false;
+    let drawHistory = [];
 
     // --- Suit Presets ---
     const suitPresets = {
@@ -309,11 +285,20 @@
     // --- App Initialization ---
     document.addEventListener('DOMContentLoaded', () => {
         initializeDeck();
+        drawCards();
         setupEventListeners();
         renderSuitOrder();
-        renderCards();
         calculateAndDisplayDigitalRoot();
         updateCodexDisplay();
+        renderHistory();
+        const savedOrder = localStorage.getItem('suitOrder');
+        if (savedOrder) {
+            suitOrder = JSON.parse(savedOrder);
+            renderSuitOrder();
+            renderCards();
+            calculateAndDisplayDigitalRoot();
+            updateCodexDisplay();
+        }
     });
 
     // --- Deck Logic ---
@@ -363,6 +348,8 @@
         renderCards();
         calculateAndDisplayDigitalRoot();
         updateCodexDisplay();
+        saveDrawToHistory();
+        renderHistory();
     }
     function flipAllCards() {
         currentDraw.forEach(card => card.faceUp = true);
@@ -416,7 +403,6 @@
         return suit === '♥' ? 'suit-hearts' : suit === '♦' ? 'suit-diamonds' : suit === '♠' ? 'suit-spades' : 'suit-clubs';
     }
     function generatePipPattern(value, suit) {
-        // Can use your original pip patterns here. For brevity, just display suit symbol.
         return `<span class="text-4xl ${getSuitClass(suit)}">${suit}</span>`;
     }
 
@@ -440,14 +426,38 @@
         document.getElementById('calculation').innerHTML = steps.join('<br>');
     }
 
-    // --- Suit Order Rendering ---
+    function saveDrawToHistory() {
+        if (currentDraw.length === 0) return;
+        drawHistory.push(currentDraw.map(card => ({ ...card })));
+    }
+    function renderHistory() {
+        const list = document.getElementById('historyList');
+        if (!list) return;
+        if (drawHistory.length === 0) {
+            list.innerHTML = '<p class="text-gray-400">No draws yet.</p>';
+            return;
+        }
+        list.innerHTML = '';
+        drawHistory.slice(-20).reverse().forEach((draw, idx) => {
+            const item = document.createElement('div');
+            item.className = 'bg-gray-700 rounded p-2 flex flex-wrap gap-2 text-xs';
+            item.innerHTML = draw.map(card =>
+                `<span class="${getSuitClass(card.suit)}">${card.value === 1 ? 'A' : card.value}${card.suit}</span>`
+            ).join(' ');
+            list.appendChild(item);
+        });
+    }
+    function clearHistory() {
+        drawHistory = [];
+        renderHistory();
+    }
+
     function renderSuitOrder() {
         const container = document.getElementById('suitOrder');
         container.innerHTML = '';
         suitOrder.forEach((suit, idx) => {
             const suitDiv = document.createElement('div');
-            suitDiv.className = 'bg-gray-700 p-3 rounded cursor-move flex items-center justify-between';
-            suitDiv.draggable = true;
+            suitDiv.className = 'bg-gray-700 p-3 rounded flex items-center justify-between';
             suitDiv.dataset.suit = suit;
             suitDiv.dataset.index = idx;
             suitDiv.innerHTML = `
@@ -457,7 +467,6 @@
                 </div>
                 <span class="text-sm text-gray-400">Codex ${idx*10+1}-${idx*10+10}</span>
             `;
-            // Drag events (implement as needed)
             container.appendChild(suitDiv);
         });
     }
@@ -486,10 +495,10 @@
         display.innerHTML = html;
     }
 
-    // --- Event Listeners ---
     function setupEventListeners() {
         document.getElementById('drawCards').addEventListener('click', drawCards);
         document.getElementById('flipAll').addEventListener('click', flipAllCards);
+        document.getElementById('clearHistory').addEventListener('click', clearHistory);
         document.querySelectorAll('.preset-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const preset = btn.dataset.preset;
@@ -500,7 +509,44 @@
                 updateCodexDisplay();
             });
         });
-        // Add listeners for export, simulation, etc as needed
+        document.getElementById('exportCSV').addEventListener('click', () => {
+            const csv = drawHistory.map(draw =>
+                draw.map(card => `${card.value === 1 ? 'A' : card.value}${card.suit}`).join(',')
+            ).join('\n');
+            downloadFile('draw_history.csv', csv, 'text/csv');
+        });
+        document.getElementById('exportJSON').addEventListener('click', () => {
+            const json = JSON.stringify(drawHistory, null, 2);
+            downloadFile('draw_history.json', json, 'application/json');
+        });
+        document.getElementById('saveSuitOrder').addEventListener('click', () => {
+            localStorage.setItem('suitOrder', JSON.stringify(suitOrder));
+            alert('Suit order saved!');
+        });
+        document.getElementById('downloadManifest').addEventListener('click', () => {
+            fetch('manifest.json')
+                .then(r => r.text())
+                .then(txt => downloadFile('manifest.json', txt, 'application/json'));
+        });
+        document.getElementById('runSimulation').addEventListener('click', () => {
+            alert("Monte Carlo simulation logic not yet implemented!");
+        });
+        document.getElementById('toggleHistoryView').addEventListener('click', () => {
+            alert("Simulation history view toggle not implemented.");
+        });
+        document.getElementById('clearSimulationHistory').addEventListener('click', () => {
+            alert("Simulation history clear not implemented.");
+        });
+    }
+
+    function downloadFile(filename, content, type) {
+        const blob = new Blob([content], { type });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
     }
     </script>
 </body>
