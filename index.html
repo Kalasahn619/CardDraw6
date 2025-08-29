@@ -766,10 +766,13 @@
                 
                 const suitClass = `suit-${card.suit === '♥' ? 'hearts' : card.suit === '♦' ? 'diamonds' : card.suit === '♠' ? 'spades' : 'clubs'}`;
                 
-                cardElement.innerHTML = `
-                    <div class="card-inner">
-                        <div class="card-back shimmer-effect"></div>
-                        <div class="card-front">
+               
+                    cardElement.innerHTML = `
+                            <div class="card-inner">
+                            <div class="card-back shimmer-effect" style="display: ${card.faceUp ? 'none' : 'block'};"></div>
+                            <div class="card-front" style="display: ${card.faceUp ? 'block' : 'none'};">
+                                <!-- your existing card-front content here -->
+
                             <div class="flex justify-between items-start">
                                 <div class="text-xs font-bold ${suitClass} leading-tight">
                                     ${card.value === 1 ? 'A' : card.value}<br>${card.suit}
@@ -792,7 +795,10 @@
                         </div>
                     </div>
                 `;
-                
+                function flipCard(index) {
+                    currentDraw[index].faceUp = !currentDraw[index].faceUp;
+                    renderCards();
+
                 // Optimized event listener with passive option
                 cardElement.addEventListener('click', () => {
                     cardElement.classList.toggle('flipped');
@@ -1639,6 +1645,7 @@
     </script>
 <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9767afc5309fd9b3',t:'MTc1NjQyNDc3MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
+
 
 
 
