@@ -1,7 +1,7 @@
 {
   "name": "Card Draw - Random Luck App",
   "short_name": "CardDraw",
-  "start_url": "/",
+  "start_url": "/CardDraw6/",
   "display": "standalone",
   "background_color": "#1f2937",
   "theme_color": "#1f2937",
@@ -18,4 +18,5 @@
       "type": "image/png"
     }
   ]
+
 }
